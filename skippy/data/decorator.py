@@ -1,11 +1,6 @@
 import logging
 
-from kubernetes import config, watch, client
-from kubernetes.client import V1Pod
-from minio import Minio
-from minio.error import ResponseError
-
-from data.minio import download_file, upload_file
+from skippy.data.minio import upload_file, download_file
 
 
 def consume(urn):

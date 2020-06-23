@@ -1,13 +1,10 @@
-import os
 import logging
-from typing import List
 
-from kubernetes import config, watch, client
+from kubernetes import client
 from kubernetes.client import V1Pod
-from minio import Minio
 from minio.error import ResponseError
 
-from data.minio import has_pod_file, minio_client
+from skippy.data.minio import has_pod_file, minio_client
 
 
 def find_minio_pods(bucket: str, file_name: str) -> None:

@@ -1,2 +1,4 @@
 skippy_data.egg-info/
 dist/*
+/.idea/
+build/

@@ -2,12 +2,11 @@ import os
 import logging
 from typing import List
 
-from kubernetes import config, watch, client
-from kubernetes.client import V1Pod
+from kubernetes import client
 from minio import Minio
 from minio.error import ResponseError
 
-from data.utils import get_bucket_urn, get_file_name_urn
+from skippy.data.utils import get_bucket_urn, get_file_name_urn
 
 
 def list_minio_pods() -> List[str]:

@@ -9,7 +9,7 @@ with open("requirements.txt", "r") as fh:
 
 setuptools.setup(
     name="skippy-data",
-    version="0.0.1",
+    version="0.0.4",
     author="Cynthia Marcelino",
     author_email="keniack@gmail.com",
     description="look up data",
