@@ -2,7 +2,7 @@ import os
 import logging
 from typing import List
 
-from kubernetes import client
+from kubernetes import client, config
 from minio import Minio
 from minio.error import ResponseError
 
@@ -11,6 +11,9 @@ from skippy.data.utils import get_bucket_urn, get_file_name_urn
 
 def list_minio_pods() -> List[str]:
     logging.debug('list minio pods...')
+    # Load the configuration when running inside the cluster (by reading envs set by k8s)
+    logging.debug('Loading in-cluster config...')
+    config.load_incluster_config()
     api = client.CoreV1Api()
     # field selectors are a string, you need to parse the fields from the pods here
     app = 'minio'
