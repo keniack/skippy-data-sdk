@@ -62,6 +62,9 @@ def minio_client(minio_addr: str) -> Minio:
 
 def download_file(urn: str) -> str:
     logging.info('download file from urn  %s' % urn)
+    #what is the best pod
+    #where do we make this decisison
+    #find the best pod to download
     for minio_addr in list_minio_pods():
         if has_pod_file(urn, minio_addr):
             client = minio_client(minio_addr)
