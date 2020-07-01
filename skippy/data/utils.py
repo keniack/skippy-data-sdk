@@ -1,3 +1,5 @@
+def get_multiple_urns(urns: str) -> list:
+    return list(urns.split(","))
 
 
 def get_bucket_urn(urn: str) -> str:

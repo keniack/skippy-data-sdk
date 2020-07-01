@@ -6,7 +6,11 @@ from kubernetes import client, config
 from minio import Minio
 from minio.error import ResponseError
 
+from data import utils
+from skippy.data.model import DataFile
 from skippy.data.utils import get_bucket_urn, get_file_name_urn
+
+from data.model import DataArtifact
 
 
 def list_minio_pods() -> List[str]:
@@ -29,7 +33,7 @@ def list_minio_pods() -> List[str]:
 
 def has_pod_file(urn: str, minio_addr: str) -> bool:
     try:
-        if has_pod_bucket(get_bucket_urn(urn),minio_addr):
+        if has_pod_bucket(get_bucket_urn(urn), minio_addr):
             stat = minio_client(minio_addr).stat_object(get_bucket_urn(urn), get_file_name_urn(urn))
             return stat.size > 0
         else:
@@ -60,7 +64,16 @@ def minio_client(minio_addr: str) -> Minio:
     return client
 
 
-def download_file(urn: str) -> str:
+def download_files(urns: str) -> DataArtifact:
+    logging.info('download files from urn(s)  %s' % urns)
+    data_artifact = DataArtifact
+    for urn in utils.get_multiple_urns(urns):
+        data_file = download_file(urn)
+        data_artifact.data.add(data_file)
+    return data_artifact
+
+
+def download_file(urn: str) -> DataFile:
     logging.info('download file from urn  %s' % urn)
     for minio_addr in list_minio_pods():
         if has_pod_file(urn, minio_addr):
@@ -68,7 +81,7 @@ def download_file(urn: str) -> str:
             response = client.get_object(get_bucket_urn(urn), get_file_name_urn(urn))
             content = str(response.read().decode('utf-8'))
             logging.debug('file content: %s' % content)
-            return content
+            return DataFile(content)
 
 
 def upload_file(urn: str, content: str) -> None:

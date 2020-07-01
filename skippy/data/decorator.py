@@ -1,17 +1,17 @@
 import logging
 
-from skippy.data.minio import upload_file, download_file
+from skippy.data.minio import upload_file, download_files
 
 
-def consume(urn):
+def consume(urns):
     def wrapper(func):
         logging.info('Consume.wrapper(%s)' % func)
 
         def call(*args, **kwargs):
             logging.info('Consume.call(%s,%s,%s)' % (func, args, kwargs))
-            content = download_file(urn)
-            logging.info('Content Data(%s)' % content)
-            kwargs['data'] = content
+            artifact = download_files(urns)
+            logging.info('Content Data(%s)' % artifact)
+            kwargs['data'] = artifact
             return func(*args, **kwargs)
 
         logging.debug('Consume.wrapper over')
@@ -27,7 +27,7 @@ def produce(urn):
         def call(*args, **kwargs):
             logging.info('Produce.call(%s,%s,%s)' % (func, args, kwargs))
             response = func(*args, **kwargs)
-            upload_file(urn,response)
+            upload_file(urn, response)
             logging.info('Produce.store(%s)' % response)
             return response
 
@@ -35,3 +35,16 @@ def produce(urn):
         return call
 
     return wrapper
+
+
+def findDecorators(target):
+    import ast, inspect
+    res = {}
+
+    def visit_FunctionDef(node):
+        res[node.name] = [ast.dump(e) for e in node.decorator_list]
+
+    V = ast.NodeVisitor()
+    V.visit_FunctionDef = visit_FunctionDef
+    V.visit(compile(inspect.getsource(target), '?', 'exec', ast.PyCF_ONLY_AST))
+    return res
