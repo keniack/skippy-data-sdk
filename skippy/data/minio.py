@@ -1,34 +1,34 @@
 import os
 import logging
-from typing import List
+from collections import defaultdict
+from typing import List, Dict
 
 from kubernetes import client, config
 from minio import Minio
 from minio.error import ResponseError
 
-from data import utils
-from skippy.data.model import DataFile
+from skippy.data import utils
+from skippy.data.priorities import get_best_node
 from skippy.data.utils import get_bucket_urn, get_file_name_urn
 
-from data.model import DataArtifact
+_CONSUME_LABEL = 'data.consume'
+__PRODUCE_LABEL = 'data.produce'
 
 
-def list_minio_pods() -> List[str]:
+def list_minio_pods_node(node: str) -> List[str]:
     logging.debug('list minio pods...')
     # Load the configuration when running inside the cluster (by reading envs set by k8s)
     logging.debug('Loading in-cluster config...')
-    config.load_incluster_config()
+    config.load_kube_config()
     api = client.CoreV1Api()
     # field selectors are a string, you need to parse the fields from the pods here
     app = 'minio'
-    ret = api.list_pod_for_all_namespaces(watch=False, label_selector="app=" + app)
-    pods = list()
+    field_selector = 'spec.nodeName=' + node if node else None
+    ret = api.list_namespaced_pod(watch=False, namespace="default", label_selector="app=" + app,
+                                  field_selector=field_selector)
     for i in ret.items:
         for c in filter(lambda co: co.name == app, i.spec.containers):
-            for p in c.ports:
-                pods.append("%s:%d" % (i.status.pod_ip, p.container_port))
-    logging.debug(pods)
-    return pods
+            return ['{}:{}'.format(i.status.pod_ip, p.container_port) for p in c.ports]
 
 
 def has_pod_file(urn: str, minio_addr: str) -> bool:
@@ -54,9 +54,6 @@ def has_pod_bucket(bucket: str, minio_addr: str) -> bool:
 def minio_client(minio_addr: str) -> Minio:
     minio_ac = os.environ.get('MINIO_AC', None)
     minio_sc = os.environ.get('MINIO_SC', None)
-    logging.debug('Minio ACCESS_KEY: %s' % minio_ac)
-    logging.debug('Minio SECRET_KEY: %s' % minio_sc)
-    logging.debug('Connecting to pod : %s' % minio_addr)
     client = Minio(minio_addr,
                    access_key=minio_ac,
                    secret_key=minio_sc,
@@ -64,38 +61,42 @@ def minio_client(minio_addr: str) -> Minio:
     return client
 
 
-def download_files(urns: str) -> DataArtifact:
+def download_files(urns: str):
     logging.info('download files from urn(s)  %s' % urns)
-    data_artifact = DataArtifact
-    for urn in utils.get_multiple_urns(urns):
+    data_artifact = defaultdict(list)
+    urn_paths = utils.get_urn_from_path(_CONSUME_LABEL, urns)
+    for urn in urn_paths:
         data_file = download_file(urn)
-        data_artifact.data.add(data_file)
+        data_artifact[urn].append(data_file)
     return data_artifact
 
 
-def download_file(urn: str) -> DataFile:
+def download_file(urn: str) -> str:
     logging.info('download file from urn  %s' % urn)
-    #what is the best pod
-    #where do we make this decisison
-    #find the best pod to download
-    for minio_addr in list_minio_pods():
+    # what is the best pod
+    # where do we make this decisison
+    # find the best pod to download
+    best_storage = get_best_node(urn)
+    for minio_addr in list_minio_pods_node(best_storage):
         if has_pod_file(urn, minio_addr):
             client = minio_client(minio_addr)
             response = client.get_object(get_bucket_urn(urn), get_file_name_urn(urn))
             content = str(response.read().decode('utf-8'))
             logging.debug('file content: %s' % content)
-            return DataFile(content)
+            return content
 
 
-def upload_file(urn: str, content: str) -> None:
+def upload_file(content: str, urn: str) -> None:
     logging.info('upload urn  %s' % urn)
+    urn = utils.get_urn_from_path(__PRODUCE_LABEL, urn)[0]
+    best_none = get_best_node(urn)
     _wfile_name = get_file_name_urn(urn)
     text_file = open(_wfile_name, "wt")
-    n = text_file.write(content)
+    text_file.write(content)
     text_file.close()
     try:
         with open(_wfile_name, 'rb') as file_data:
-            for minio_addr in list_minio_pods():
+            for minio_addr in list_minio_pods_node(best_none):
                 if has_pod_bucket(get_bucket_urn(urn), minio_addr):
                     client = minio_client(minio_addr)
                     file_stat = os.stat(_wfile_name)

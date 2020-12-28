@@ -1,2 +1,6 @@
-kubernetes==9.0.0
+kubernetes~=11.0.0
 minio~=5.0.10
+
+skippy~=0.1.0
+redis~=3.5.3
+PyYAML~=5.3.1
