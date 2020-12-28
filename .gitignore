@@ -2,3 +2,5 @@ skippy_data.egg-info/
 dist/*
 /.idea/
 build/
+.DS_Store
+**/.DS_Store
