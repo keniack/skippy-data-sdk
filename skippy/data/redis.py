@@ -35,3 +35,10 @@ def get_files_size(path: str):
     items_size_json = client().hget(name='items_size', key='items_size')
     items_size = json.loads(items_size_json)
     return items_size.get(path)
+
+
+def list_stoarage_pods_node(node: str) -> List[str]:
+    logging.debug('list minio pods...')
+    storage_pods_json = client().hget(name='storage_pods', key='storage_pods')
+    storage_pods = json.loads(storage_pods_json)
+    return storage_pods.get(node)

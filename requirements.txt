@@ -1,5 +1,5 @@
 kubernetes~=12.0.1
-minio~=7.0.0
+minio~=5.0.10
 
 redis~=3.5.3
 PyYAML~=5.3.1

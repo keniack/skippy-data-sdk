@@ -1,6 +1,6 @@
 import yaml
 
-_CONFIG_FILE: str = 'skippy.yml'
+_CONFIG_FILE: str = 'function/skippy.yml'
 
 
 def get_multiple_urns(urns: str) -> list:

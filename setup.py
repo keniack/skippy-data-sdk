@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="skippy-data",
-    version="0.3",
+    version="0.6",
     author="Cynthia Marcelino",
     author_email="keniack@gmail.com",
     description="look up data",
@@ -16,7 +16,7 @@ setuptools.setup(
     download_url="https://git.dsg.tuwien.ac.at/c.marcelino/skippy-data",
     packages=setuptools.find_packages(),
     setup_requires=['wheel'],
-    install_requires=['kubernetes~=12.0.1','minio~=7.0.0','redis~=3.5.3','PyYAML~=5.3.1'],
+    install_requires=['kubernetes~=12.0.1','minio~=5.0.10','redis~=3.5.3','PyYAML~=5.3.1'],
     pyton_requires='>=3.7',
     classifiers=[
         "Programming Language :: Python :: 3",
