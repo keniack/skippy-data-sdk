@@ -7,7 +7,7 @@ from minio.error import ResponseError
 
 from skippy.data import utils
 from skippy.data.priorities import get_best_node
-from skippy.data.redis import list_stoarage_pods_node
+from skippy.data.redis import list_storage_pods_node
 from skippy.data.utils import get_bucket_urn, get_file_name_urn
 
 _CONSUME_LABEL = 'data.consume'
@@ -60,13 +60,13 @@ def download_file(urn: str) -> str:
     # where do we make this decisison
     # find the best pod to download
     best_storage = get_best_node(urn)
-    for minio_addr in list_stoarage_pods_node(best_storage):
-        if has_pod_file(urn, minio_addr):
-            client = minio_client(minio_addr)
-            response = client.get_object(get_bucket_urn(urn), get_file_name_urn(urn))
-            content = str(response.read().decode('utf-8'))
-            logging.debug('file content: %s' % content)
-            return content
+    minio_addr = list_storage_pods_node(best_storage)
+    if has_pod_file(urn, minio_addr):
+        client = minio_client(minio_addr)
+        response = client.get_object(get_bucket_urn(urn), get_file_name_urn(urn))
+        content = str(response.read().decode('utf-8'))
+        logging.debug('file content: %s' % content)
+        return content
 
 
 def upload_file(content: str, urn: str) -> None:
@@ -79,12 +79,11 @@ def upload_file(content: str, urn: str) -> None:
     text_file.close()
     try:
         with open(_wfile_name, 'rb') as file_data:
-            for minio_addr in list_stoarage_pods_node(best_none):
-                if has_pod_bucket(get_bucket_urn(urn), minio_addr):
-                    client = minio_client(minio_addr)
-                    file_stat = os.stat(_wfile_name)
-                    client.put_object(get_bucket_urn(urn), _wfile_name, file_data, file_stat.st_size,
-                                      content_type='application/json')
-                    break
+            minio_addr = list_storage_pods_node(best_none)
+            if has_pod_bucket(get_bucket_urn(urn), minio_addr):
+                client = minio_client(minio_addr)
+                file_stat = os.stat(_wfile_name)
+                client.put_object(get_bucket_urn(urn), _wfile_name, file_data, file_stat.st_size,
+                                  content_type='application/json')
     except ResponseError as e:
         logging.error('MinioClientException: %s', e.message)

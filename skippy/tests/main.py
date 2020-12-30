@@ -5,8 +5,8 @@ from skippy.data.decorator import consume, produce
 from skippy.data.minio import download_files, upload_file
 
 
-@consume("test/anotherfile.txt")
-@produce("b1-51/anotherfile.txt")
+@consume()
+@produce()
 def handle(req, data=None):
     print("handle.(", data, ")")
     data = req + json.dumps(data)
@@ -14,10 +14,6 @@ def handle(req, data=None):
     return data
 
 def main():
-    level = logging.DEBUG
-
-    # Set the log level
-    logging.getLogger().setLevel(level)
     handle('bbbbbbbbbb')
     #files = download_files(urns=None)
     #upload_file(json.dumps(files),urn=None)

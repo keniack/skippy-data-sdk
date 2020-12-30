@@ -5,6 +5,10 @@ from skippy.data.minio import upload_file, download_files
 
 def consume(urns=None):
     def wrapper(func):
+        level = logging.DEBUG
+
+        # Set the log level
+        logging.getLogger().setLevel(level)
         logging.info('Consume.wrapper(%s)' % func)
 
         def call(*args, **kwargs):
@@ -22,6 +26,10 @@ def consume(urns=None):
 
 def produce(urn=None):
     def wrapper(func):
+        level = logging.DEBUG
+
+        # Set the log level
+        logging.getLogger().setLevel(level)
         logging.info('Produce.wrapper(%s)' % func)
 
         def call(*args, **kwargs):
