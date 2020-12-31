@@ -42,3 +42,10 @@ def list_storage_pods_node(node: str) -> List[str]:
     storage_pods_json = client().hget(name='storage_pods', key='storage_pods')
     storage_pods = json.loads(storage_pods_json)
     return storage_pods.get(node)
+
+
+def get_pod_node_name(pod_name: str) -> List[str]:
+    logging.debug('Get node for pod %s' % pod_name)
+    pods_node_json = client().hget(name='openfaas_pods', key='openfaas_pods')
+    pods_node_json = json.loads(pods_node_json)
+    return pods_node_json.get(pod_name)
