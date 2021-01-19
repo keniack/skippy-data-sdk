@@ -1,12 +1,14 @@
 import logging
 import os
 
-from skippy.data.redis import get_files_size, get_storage_nodes, get_dl_bandwidth, get_storage_bucket, get_pod_node_name
+from skippy.data.redis import get_files_size, get_storage_nodes, get_dl_bandwidth, get_storage_bucket
 from skippy.data.utils import get_bucket_urn
 
 
+
 def get_best_node(urn: str):
-    node_name = get_pod_node_name(os.environ['HOSTNAME'])
+    node_name = os.environ.get('node', None)
+    logging.debug("Node %s" % node_name)
 
     file_size = get_files_size(urn)
 

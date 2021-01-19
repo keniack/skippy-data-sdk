@@ -8,6 +8,7 @@ from minio.error import ResponseError
 from skippy.data import utils
 from skippy.data.priorities import get_best_node
 from skippy.data.redis import list_storage_pods_node
+from skippy.data.storage import has_local_storage_file, save_file_content_local_storage, load_file_content_local_storage
 from skippy.data.utils import get_bucket_urn, get_file_name_urn
 
 _CONSUME_LABEL = 'data.consume'
@@ -59,18 +60,23 @@ def download_file(urn: str) -> str:
     # what is the best pod
     # where do we make this decisison
     # find the best pod to download
-    best_storage = get_best_node(urn)
-    minio_addr = list_storage_pods_node(best_storage)
-    if has_pod_file(urn, minio_addr):
-        client = minio_client(minio_addr)
-        response = client.get_object(get_bucket_urn(urn), get_file_name_urn(urn))
-        content = str(response.read().decode('utf-8'))
-        logging.debug('file content: %s' % content)
-        return content
+    if has_local_storage_file(urn):
+        logging.info('file loaded from temp storage ' % urn)
+        return load_file_content_local_storage(urn)
+    else:
+        best_storage = get_best_node(urn)
+        minio_addr = list_storage_pods_node(best_storage)
+        if has_pod_file(urn, minio_addr):
+            client = minio_client(minio_addr)
+            response = client.get_object(get_bucket_urn(urn), get_file_name_urn(urn))
+            content = str(response.read().decode('utf-8'))
+            logging.debug('file content: %s' % content)
+            return content
 
 
 def upload_file(content: str, urn: str) -> None:
-    logging.info('upload urn  %s' % urn)
+    save_file_content_local_storage(content,urn)
+    logging.info('upload urn %s' % urn)
     urn = utils.get_urn_from_path(__PRODUCE_LABEL, urn)[0]
     best_none = get_best_node(urn)
     _wfile_name = get_file_name_urn(urn)
