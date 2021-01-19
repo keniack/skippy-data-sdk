@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="skippy-data",
-    version="0.71",
+    version="0.72",
     author="Cynthia Marcelino",
     author_email="keniack@gmail.com",
     description="look up data",
