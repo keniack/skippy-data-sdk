@@ -42,7 +42,7 @@ def list_storage_pods_node(node: str) -> Dict[str, str]:
     storage_pods_json = client().hget(name='storage_pods', key='storage_pods')
     storage_pods = json.loads(storage_pods_json)
     if storage_pods.get(node):
-        return storage_pods.get(node)
+        return {k: v for k, v in storage_pods.items() if k == node}
     else:
         return storage_pods
 

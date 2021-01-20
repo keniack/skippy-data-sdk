@@ -1,6 +1,6 @@
 data:
   consume:
-    - ananas.myfile.json
+    - test.myfile.json
   produce:
     - myproduce1.myfile1.txt
 policy:
