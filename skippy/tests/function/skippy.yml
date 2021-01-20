@@ -1,6 +1,5 @@
 data:
   consume:
-    - test.minio.csv
     - ananas.myfile.json
   produce:
     - myproduce1.myfile1.txt

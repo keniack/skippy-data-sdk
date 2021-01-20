@@ -11,6 +11,8 @@ def get_best_node(urn: str):
     logging.debug("Node %s" % node_name)
 
     file_size = get_files_size(urn)
+    if file_size is None:
+        return None
 
     time = 0
     max_bw_storage = None
@@ -28,7 +30,7 @@ def get_best_node(urn: str):
             return storage
 
         bandwidth = get_dl_bandwidth(storage, node_name)
-        if bandwidth > max_bw:
+        if bandwidth is not None and bandwidth > max_bw:
             max_bw = bandwidth
             max_bw_storage = storage
 

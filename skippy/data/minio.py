@@ -51,7 +51,8 @@ def download_files(urns: str):
     urn_paths = utils.get_urn_from_path(_CONSUME_LABEL, urns)
     for urn in urn_paths:
         data_file = download_file(urn)
-        data_artifact[urn].append(data_file)
+        if data_file is not None:
+            data_artifact[urn].append(data_file)
     return data_artifact
 
 
@@ -65,18 +66,20 @@ def download_file(urn: str) -> str:
         return load_file_content_local_storage(urn)
     else:
         best_storage = get_best_node(urn)
-        minio_addr = list_storage_pods_node(best_storage)
-        if has_pod_file(urn, minio_addr):
-            client = minio_client(minio_addr)
-            response = client.get_object(get_bucket_urn(urn), get_file_name_urn(urn))
-            content = str(response.read().decode('utf-8'))
-            logging.debug('file content: %s' % content)
-            return content
+        minio_addrs = list_storage_pods_node(best_storage)
+        for node, minio_addr in minio_addrs.items():
+            if has_pod_file(urn, minio_addr):
+                client = minio_client(minio_addr)
+                response = client.get_object(get_bucket_urn(urn), get_file_name_urn(urn))
+                content = str(response.read().decode('utf-8'))
+#                logging.debug('file content: %s' % content)
+                return content
 
 
 def upload_file(content: str, urn: str) -> None:
     logging.info('upload urn %s' % urn)
-    urn = utils.get_urn_from_path(__PRODUCE_LABEL, urn)[0]
+    if urn is None:
+        urn = utils.get_urn_from_path(__PRODUCE_LABEL, urn)[0]
     save_file_content_local_storage(content, urn)
     best_none = get_best_node(urn)
     _wfile_name = get_file_name_urn(urn)
@@ -85,11 +88,13 @@ def upload_file(content: str, urn: str) -> None:
     text_file.close()
     try:
         with open(_wfile_name, 'rb') as file_data:
-            minio_addr = list_storage_pods_node(best_none)
-            if has_pod_bucket(get_bucket_urn(urn), minio_addr):
-                client = minio_client(minio_addr)
-                file_stat = os.stat(_wfile_name)
-                client.put_object(get_bucket_urn(urn), _wfile_name, file_data, file_stat.st_size,
-                                  content_type='application/json')
+            minio_addrs = list_storage_pods_node(best_none)
+            for node, minio_addr in minio_addrs.items():
+                if has_pod_bucket(get_bucket_urn(urn), minio_addr):
+                    client = minio_client(minio_addr)
+                    file_stat = os.stat(_wfile_name)
+                    client.put_object(get_bucket_urn(urn), _wfile_name, file_data, file_stat.st_size,
+                                      content_type='application/json')
+                    return
     except ResponseError as e:
         logging.error('MinioClientException: %s', e.message)

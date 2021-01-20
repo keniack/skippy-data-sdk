@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from typing import List
+from typing import List, Dict
 
 import redis
 
@@ -16,7 +16,7 @@ def client():
 def get_dl_bandwidth(from_to: str, tar_to: str) -> float:
     bandwidth_json = client().hget(name='bandwidth_graph', key='bandwidth_graph')
     bandwidth = json.loads(bandwidth_json)
-    return bandwidth[from_to][tar_to]
+    return bandwidth[from_to].get(tar_to)
 
 
 def get_storage_nodes(urn: str) -> List[str]:
@@ -37,14 +37,16 @@ def get_files_size(path: str):
     return items_size.get(path)
 
 
-def list_storage_pods_node(node: str) -> List[str]:
+def list_storage_pods_node(node: str) -> Dict[str, str]:
     logging.debug('list minio pods...')
     storage_pods_json = client().hget(name='storage_pods', key='storage_pods')
     storage_pods = json.loads(storage_pods_json)
-    return storage_pods.get(node)
+    if storage_pods.get(node):
+        return storage_pods.get(node)
+    else:
+        return storage_pods
 
-
-#def get_pod_node_name(pod_name: str) -> List[str]:
+# def get_pod_node_name(pod_name: str) -> List[str]:
 #    logging.debug('Get node for pod %s' % pod_name)
 #    pods_node_json = client().hget(name='openfaas_pods', key='openfaas_pods')
 #    pods_node_json = json.loads(pods_node_json)

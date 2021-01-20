@@ -32,4 +32,4 @@ def save_file_content_local_storage(content: str, urn: str):
             x_file.write(content)
         logging.info('File saved in %s' % (time.time() - start_time))
     except Exception as e:
-        logging.error('Error trying to save file in local storage: %s', e.message)
+        logging.error('Error trying to save file in local storage: %s', e)
