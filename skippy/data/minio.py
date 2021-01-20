@@ -75,9 +75,9 @@ def download_file(urn: str) -> str:
 
 
 def upload_file(content: str, urn: str) -> None:
-    save_file_content_local_storage(content,urn)
     logging.info('upload urn %s' % urn)
     urn = utils.get_urn_from_path(__PRODUCE_LABEL, urn)[0]
+    save_file_content_local_storage(content, urn)
     best_none = get_best_node(urn)
     _wfile_name = get_file_name_urn(urn)
     text_file = open(_wfile_name, "wt")

@@ -14,7 +14,6 @@ def consume(urns=None):
         def call(*args, **kwargs):
             logging.info('Consume.call(%s,%s,%s)' % (func, args, kwargs))
             artifact = download_files(urns)
-            logging.info('Content Data(%s)' % artifact)
             kwargs['data'] = artifact
             return func(*args, **kwargs)
 
@@ -36,7 +35,7 @@ def produce(urn=None):
             logging.info('Produce.call(%s,%s,%s)' % (func, args, kwargs))
             response = func(*args, **kwargs)
             upload_file(response, urn)
-            logging.info('Produce.store(%s)' % response)
+            logging.debug('Produce.store(%s)' % response)
             return response
 
         logging.debug('Produce.wrapper over')
