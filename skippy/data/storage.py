@@ -28,7 +28,7 @@ def save_file_content_local_storage(content: str, urn: str):
     logging.info('Save file in local storage %s' % path)
     start_time = time.time()
     try:
-        with open(file_name, 'w') as x_file:
+        with open(path, 'w') as x_file:
             x_file.write(content)
         logging.info('File saved in %s' % (time.time() - start_time))
     except Exception as e:

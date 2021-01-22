@@ -32,10 +32,11 @@ def produce(urn=None):
         logging.info('Produce.wrapper(%s)' % func)
 
         def call(*args, **kwargs):
-            logging.info('Produce.call(%s,%s,%s)' % (func, args, kwargs))
+#            logging.info('Produce.call (%s,%s,%s)' % (func, args, kwargs))
+            logging.info('Produce.call')
             response = func(*args, **kwargs)
             upload_file(response, urn)
-            logging.debug('Produce.store(%s)' % response)
+#            logging.debug('Produce.store(%s)' % response)
             return response
 
         logging.debug('Produce.wrapper over')
