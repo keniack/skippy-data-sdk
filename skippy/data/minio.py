@@ -1,5 +1,6 @@
 import os
 import logging
+import time
 from collections import defaultdict
 
 from minio import Minio
@@ -7,7 +8,7 @@ from minio.error import ResponseError
 
 from skippy.data import utils
 from skippy.data.priorities import get_best_node
-from skippy.data.redis import list_storage_pods_node
+from skippy.data.redis import list_storage_pods_node, store_bandwidth
 from skippy.data.storage import has_local_storage_file, save_file_content_local_storage, load_file_content_local_storage
 from skippy.data.utils import get_bucket_urn, get_file_name_urn
 
@@ -70,9 +71,13 @@ def download_file(urn: str) -> str:
         for node, minio_addr in minio_addrs.items():
             if has_pod_file(urn, minio_addr):
                 client = minio_client(minio_addr)
+                start = time.perf_counter()
                 response = client.get_object(get_bucket_urn(urn), get_file_name_urn(urn))
                 content = str(response.read().decode('utf-8'))
-#                logging.debug('file content: %s' % content)
+                end = time.perf_counter()
+                size = int(response.headers.get('content-length', '0'))
+                logging.debug('file download from %s in %s' % (node, (end - start)))
+                store_bandwidth(node, size, end - start)
                 return content
 
 
@@ -93,8 +98,12 @@ def upload_file(content: str, urn: str) -> None:
                 if has_pod_bucket(get_bucket_urn(urn), minio_addr):
                     client = minio_client(minio_addr)
                     file_stat = os.stat(_wfile_name)
+                    start = time.perf_counter()
                     client.put_object(get_bucket_urn(urn), _wfile_name, file_data, file_stat.st_size,
                                       content_type='application/json')
+                    end = time.perf_counter()
+                    logging.debug('file download from %s in %s' % (node, (end - start)))
+                    store_bandwidth(node,file_stat.st_size, end - start)
                     return
     except ResponseError as e:
         logging.error('MinioClientException: %s', e.message)

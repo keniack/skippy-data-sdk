@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from collections import defaultdict
 from typing import List, Dict
 
 import redis
@@ -45,6 +46,18 @@ def list_storage_pods_node(node: str) -> Dict[str, str]:
         return {k: v for k, v in storage_pods.items() if k == node}
     else:
         return storage_pods
+
+
+def store_bandwidth(to_node: str, size: float, time: float):
+    from_node = os.environ.get('node', None)
+    data_bandwidth_graph = defaultdict(lambda: defaultdict())
+    data_bandwidth_graph_json = client().hget(name='data_bandwidth_graph', key='data_bandwidth_graph')
+    if data_bandwidth_graph_json is not None:
+        data_bandwidth_graph = json.loads(data_bandwidth_graph_json)
+    if from_node != to_node:
+        data_bandwidth_graph[from_node][to_node] = round(size / time, 1)
+        logging.info("data_bandwidth_graph %s", data_bandwidth_graph)
+        client().hset(name='data_bandwidth_graph', key='data_bandwidth_graph', value=json.dumps(data_bandwidth_graph))
 
 # def get_pod_node_name(pod_name: str) -> List[str]:
 #    logging.debug('Get node for pod %s' % pod_name)
