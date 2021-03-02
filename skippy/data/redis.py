@@ -53,7 +53,7 @@ def store_bandwidth(to_node: str, size: float, time: float):
     data_bandwidth_graph = defaultdict(lambda: defaultdict())
     data_bandwidth_graph_json = client().hget(name='data_bandwidth_graph', key='data_bandwidth_graph')
     if data_bandwidth_graph_json is not None:
-        data_bandwidth_graph = json.loads(data_bandwidth_graph_json)
+        data_bandwidth_graph.update(json.loads(data_bandwidth_graph_json))
     if from_node != to_node:
         data_bandwidth_graph[from_node][to_node] = round(size / time, 1)
         logging.info("data_bandwidth_graph %s", data_bandwidth_graph)

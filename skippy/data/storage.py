@@ -2,6 +2,8 @@ import logging
 import os
 import time
 
+import numpy as np
+
 from skippy.data.utils import get_file_name_urn
 
 _LOCAL_SKIPPY_STORAGE = "/openfaas-local-storage/"
@@ -22,14 +24,13 @@ def load_file_content_local_storage(urn: str):
     return content
 
 
-def save_file_content_local_storage(content: str, urn: str):
+def save_file_content_local_storage(content, urn: str):
     file_name = get_file_name_urn(urn)
     path = _LOCAL_SKIPPY_STORAGE + file_name
     logging.info('Save file in local storage %s' % path)
     start_time = time.time()
     try:
-        with open(path, 'w') as x_file:
-            x_file.write(content)
+        np.save(file_name, content, allow_pickle=True)
         logging.info('File saved in %s' % (time.time() - start_time))
     except Exception as e:
         logging.error('Error trying to save file in local storage: %s', e)

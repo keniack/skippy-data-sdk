@@ -1,7 +1,9 @@
-import os
 import logging
+import os
 import time
 from collections import defaultdict
+from typing import io
+import numpy as np
 
 from minio import Minio
 from minio.error import ResponseError
@@ -63,7 +65,7 @@ def download_file(urn: str) -> str:
     # where do we make this decisison
     # find the best pod to download
     if has_local_storage_file(urn):
-        logging.info('file loaded from temp storage ' % urn)
+        logging.info('file loaded from temp storage %s' % urn)
         return load_file_content_local_storage(urn)
     else:
         best_storage = get_best_node(urn)
@@ -81,29 +83,27 @@ def download_file(urn: str) -> str:
                 return content
 
 
-def upload_file(content: str, urn: str) -> None:
+def upload_file(content, urn: str) -> None:
     logging.info('upload urn %s' % urn)
     if urn is None:
         urn = utils.get_urn_from_path(__PRODUCE_LABEL, urn)[0]
     save_file_content_local_storage(content, urn)
     best_none = get_best_node(urn)
-    _wfile_name = get_file_name_urn(urn)
-    text_file = open(_wfile_name, "wt")
-    text_file.write(content)
-    text_file.close()
+    file_name = get_file_name_urn(urn)
     try:
-        with open(_wfile_name, 'rb') as file_data:
-            minio_addrs = list_storage_pods_node(best_none)
-            for node, minio_addr in minio_addrs.items():
-                if has_pod_bucket(get_bucket_urn(urn), minio_addr):
-                    client = minio_client(minio_addr)
-                    file_stat = os.stat(_wfile_name)
-                    start = time.perf_counter()
-                    client.put_object(get_bucket_urn(urn), _wfile_name, file_data, file_stat.st_size,
-                                      content_type='application/json')
-                    end = time.perf_counter()
-                    logging.debug('file download from %s in %s' % (node, (end - start)))
-                    store_bandwidth(node,file_stat.st_size, end - start)
-                    return
+        minio_addrs = list_storage_pods_node(best_none)
+        for node, minio_addr in minio_addrs.items():
+            if has_pod_bucket(get_bucket_urn(urn), minio_addr):
+                client = minio_client(minio_addr)
+                start = time.perf_counter()
+                buf = np.array(content, dtype="object").tobytes()
+                size = len(buf)
+                client.put_object(get_bucket_urn(urn), file_name, io.BytesIO(buf), size,
+                                  content_type='application/json')
+
+                end = time.perf_counter()
+                logging.debug('file upload size %s from %s in %s' % (node, size, (end - start)))
+                store_bandwidth(node, size, end - start)
+                return
     except ResponseError as e:
         logging.error('MinioClientException: %s', e.message)
