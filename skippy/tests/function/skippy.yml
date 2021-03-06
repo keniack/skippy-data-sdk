@@ -1,7 +1,8 @@
 data:
   consume:
-    - test.myfile.json
+    - pre-processed.data_35M.csv
+    - pre-processed.pre-model.npy
   produce:
-    - myproduce1.myfile1.txt
+    - pre-processed.pre-model.npy
 policy:
   capability: gpu

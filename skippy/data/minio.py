@@ -2,8 +2,7 @@ import logging
 import os
 import time
 from collections import defaultdict
-from typing import io
-import numpy as np
+
 
 from minio import Minio
 from minio.error import ResponseError
@@ -50,12 +49,12 @@ def minio_client(minio_addr: str) -> Minio:
 
 def download_files(urns: str):
     logging.info('download files from urn(s)  %s' % urns)
-    data_artifact = defaultdict(list)
+    data_artifact = defaultdict()
     urn_paths = utils.get_urn_from_path(_CONSUME_LABEL, urns)
     for urn in urn_paths:
         data_file = download_file(urn)
         if data_file is not None:
-            data_artifact[urn].append(data_file)
+            data_artifact[urn] = data_file
     return data_artifact
 
 
@@ -75,7 +74,7 @@ def download_file(urn: str) -> str:
                 client = minio_client(minio_addr)
                 start = time.perf_counter()
                 response = client.get_object(get_bucket_urn(urn), get_file_name_urn(urn))
-                content = str(response.read().decode('utf-8'))
+                content = response.read()
                 end = time.perf_counter()
                 size = int(response.headers.get('content-length', '0'))
                 logging.debug('file download from %s in %s' % (node, (end - start)))
@@ -83,24 +82,25 @@ def download_file(urn: str) -> str:
                 return content
 
 
-def upload_file(content, urn: str) -> None:
-    logging.info('upload urn %s' % urn)
-    if urn is None:
-        urn = utils.get_urn_from_path(__PRODUCE_LABEL, urn)[0]
-    save_file_content_local_storage(content, urn)
-    best_none = get_best_node(urn)
+def upload_files(content, urns: str) -> None:
+    logging.info('upload urn %s' % urns)
+    urn = utils.get_urn_from_path(__PRODUCE_LABEL, urns)[0] if urns is None else urns
+    best_none = get_best_node(urn, len(content))
+    full_path = save_file_content_local_storage(content, urn)
+    bucket = get_bucket_urn(urn)
     file_name = get_file_name_urn(urn)
+    upload_single_file(bucket, file_name, best_none, content, full_path)
+
+
+def upload_single_file(bucket: str, file_name: str, best_none: str, content, full_path: str) -> None:
     try:
         minio_addrs = list_storage_pods_node(best_none)
         for node, minio_addr in minio_addrs.items():
-            if has_pod_bucket(get_bucket_urn(urn), minio_addr):
+            if has_pod_bucket(bucket, minio_addr):
                 client = minio_client(minio_addr)
                 start = time.perf_counter()
-                buf = np.array(content, dtype="object").tobytes()
-                size = len(buf)
-                client.put_object(get_bucket_urn(urn), file_name, io.BytesIO(buf), size,
-                                  content_type='application/json')
-
+                size = len(content)
+                client.fput_object(bucket, file_name, full_path)
                 end = time.perf_counter()
                 logging.debug('file upload size %s from %s in %s' % (node, size, (end - start)))
                 store_bandwidth(node, size, end - start)

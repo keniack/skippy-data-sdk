@@ -5,14 +5,15 @@ from skippy.data.redis import get_files_size, get_storage_nodes, get_dl_bandwidt
 from skippy.data.utils import get_bucket_urn
 
 
-
-def get_best_node(urn: str):
+def get_best_node(urn: str, estimated_file_size=None):
     node_name = os.environ.get('node', None)
     logging.debug("Node %s" % node_name)
 
     file_size = get_files_size(urn)
-    if file_size is None:
+    if estimated_file_size is None and file_size is None:
         return None
+    elif file_size is None:
+        file_size=estimated_file_size
 
     time = 0
     max_bw_storage = None

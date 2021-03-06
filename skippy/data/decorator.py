@@ -1,6 +1,6 @@
 import logging
 
-from skippy.data.minio import upload_file, download_files
+from skippy.data.minio import upload_files, download_files
 
 
 def consume(urns=None):
@@ -35,7 +35,7 @@ def produce(urn=None):
 #            logging.info('Produce.call (%s,%s,%s)' % (func, args, kwargs))
             logging.info('Produce.call')
             response = func(*args, **kwargs)
-            upload_file(response, urn)
+            upload_files(response, urn)
 #            logging.debug('Produce.store(%s)' % response)
             return response
 
