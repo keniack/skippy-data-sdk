@@ -2,7 +2,7 @@ import logging
 import os
 import time
 from collections import defaultdict
-
+import numpy as np
 
 from minio import Minio
 from minio.error import ResponseError
@@ -10,7 +10,8 @@ from minio.error import ResponseError
 from skippy.data import utils
 from skippy.data.priorities import get_best_node
 from skippy.data.redis import list_storage_pods_node, store_bandwidth
-from skippy.data.storage import has_local_storage_file, save_file_content_local_storage, load_file_content_local_storage
+from skippy.data.storage import has_local_storage_file, save_file_content_local_storage, \
+    load_file_content_local_storage, local_storage_file, load_file
 from skippy.data.utils import get_bucket_urn, get_file_name_urn
 
 _CONSUME_LABEL = 'data.consume'
@@ -58,7 +59,7 @@ def download_files(urns: str):
     return data_artifact
 
 
-def download_file(urn: str) -> str:
+def download_file(urn: str):
     logging.info('download file from urn  %s' % urn)
     # what is the best pod
     # where do we make this decisison
@@ -74,8 +75,9 @@ def download_file(urn: str) -> str:
                 client = minio_client(minio_addr)
                 start = time.perf_counter()
                 response = client.get_object(get_bucket_urn(urn), get_file_name_urn(urn))
-                content = response.read()
+                client.fget_object(get_bucket_urn(urn), get_file_name_urn(urn), local_storage_file(urn))
                 end = time.perf_counter()
+                content = load_file(local_storage_file(urn))
                 size = int(response.headers.get('content-length', '0'))
                 logging.debug('file download from %s in %s' % (node, (end - start)))
                 store_bandwidth(node, size, end - start)
@@ -85,7 +87,7 @@ def download_file(urn: str) -> str:
 def upload_files(content, urns: str) -> None:
     logging.info('upload urn %s' % urns)
     urn = utils.get_urn_from_path(__PRODUCE_LABEL, urns)[0] if urns is None else urns
-    best_none = get_best_node(urn, len(content))
+    best_none = get_best_node(urn, len(content), True)
     full_path = save_file_content_local_storage(content, urn)
     bucket = get_bucket_urn(urn)
     file_name = get_file_name_urn(urn)
@@ -99,7 +101,7 @@ def upload_single_file(bucket: str, file_name: str, best_none: str, content, ful
             if has_pod_bucket(bucket, minio_addr):
                 client = minio_client(minio_addr)
                 start = time.perf_counter()
-                size = len(content)
+                size = os.stat(full_path).st_size
                 client.fput_object(bucket, file_name, full_path)
                 end = time.perf_counter()
                 logging.debug('file upload size %s from %s in %s' % (node, size, (end - start)))

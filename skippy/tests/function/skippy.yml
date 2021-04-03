@@ -1,8 +1,10 @@
 data:
   consume:
     - pre-processed.data_35M.csv
-    - pre-processed.pre-model.npy
+    - trained-models.model-35.npy
   produce:
-    - pre-processed.pre-model.npy
+    - pre-processed.pre-model-35.npy
 policy:
   capability: gpu
+prediction:
+  enabled: false

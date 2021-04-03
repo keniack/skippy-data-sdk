@@ -17,19 +17,26 @@ def client():
 def get_dl_bandwidth(from_to: str, tar_to: str) -> float:
     bandwidth_json = client().hget(name='bandwidth_graph', key='bandwidth_graph')
     bandwidth = json.loads(bandwidth_json)
-    return bandwidth[from_to].get(tar_to)
+    return bandwidth[from_to].get(tar_to) if bandwidth.get(from_to) else None
 
 
-def get_storage_nodes(urn: str) -> List[str]:
+def get_storage_nodes(urn: str, locality: str) -> List[str]:
     nodes_item_json = client().hget(name='nodes_item', key='nodes_item')
     nodes_item = json.loads(nodes_item_json)
-    return nodes_item.get(urn)
+    logging.info('Nodes item %s' % nodes_item_json)
+    nodes_locality_json = client().hget(name='nodes_locality', key='nodes_locality')
+    nodes_locality = json.loads(nodes_locality_json)
+    logging.info('Nodes locality %s' % nodes_locality_json)
+    return [n for n in nodes_item.get(urn) if nodes_item.get(urn) and nodes_locality[n] == locality]
 
 
-def get_storage_bucket(bucket: str) -> List[str]:
+def get_storage_bucket(bucket: str, locality: str) -> List[str]:
     buckets_json = client().hget(name='buckets', key='buckets')
     nodes_item = json.loads(buckets_json)
-    return nodes_item.get(bucket)
+    logging.info('buckets_json %s' % buckets_json)
+    nodes_locality_json = client().hget(name='nodes_locality', key='nodes_locality')
+    nodes_locality = json.loads(nodes_locality_json)
+    return [n for n in nodes_item.get(bucket) if nodes_item.get(bucket) and nodes_locality[n] == locality]
 
 
 def get_files_size(path: str):

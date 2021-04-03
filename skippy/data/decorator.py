@@ -6,7 +6,9 @@ from skippy.data.minio import upload_files, download_files
 def consume(urns=None):
     def wrapper(func):
         level = logging.DEBUG
-
+        logging.basicConfig(format='%(asctime)s|%(levelname)-s|%(message)s',
+                            level=logging.DEBUG,
+                            datefmt='%d.%m.%Y %H:%M:%S')
         # Set the log level
         logging.getLogger().setLevel(level)
         logging.info('Consume.wrapper(%s)' % func)
@@ -26,7 +28,9 @@ def consume(urns=None):
 def produce(urn=None):
     def wrapper(func):
         level = logging.DEBUG
-
+        logging.basicConfig(format='%(asctime)s|%(levelname)-s|%(message)s',
+                            level=logging.DEBUG,
+                            datefmt='%d.%m.%Y %H:%M:%S')
         # Set the log level
         logging.getLogger().setLevel(level)
         logging.info('Produce.wrapper(%s)' % func)

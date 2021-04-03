@@ -24,6 +24,15 @@ def get_urn_from_path(label_suffix: str, urns: str = None):
         return get_urn_from_config_file(label_suffix)
 
 
+def is_prediction_enabled():
+    data = parse_yaml(_CONFIG_FILE)
+    label_arr = "prediction.enabled".split('.')
+    if not data.get(label_arr[0]):
+        return True
+    return data[label_arr[0]][label_arr[1]]
+
+
+
 def get_urn_from_config_file(label_suffix: str):
     data = parse_yaml(_CONFIG_FILE)
     label_arr = label_suffix.split('.')
@@ -36,4 +45,3 @@ def parse_yaml(config_file: str = None):
         config_file = _CONFIG_FILE
     with open(config_file) as f:
         return yaml.safe_load(f)
-
