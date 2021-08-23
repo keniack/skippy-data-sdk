@@ -7,4 +7,4 @@ data:
 policy:
   capability: gpu
 prediction:
-  enabled: false
+  enabled: true
